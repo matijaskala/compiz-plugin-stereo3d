@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<compiz>
+    <plugin name="stereo3d" useBcop="true">
+	<_short>Stereo 3D</_short>
+	<_long>Enables the stereo effect for 3D Displays</_long>
+	<category>Effects</category>
+	<deps>
+		<requirement>
+			<plugin>mousepoll</plugin>
+		</requirement>
+
+		<relation type="after">
+			<plugin>opengl</plugin>
+			<plugin>cube</plugin>
+			<plugin>animation</plugin>
+			<plugin>expo</plugin>
+		</relation>
+                
+                
+		<relation type="before">
+		</relation>
+	</deps>
+	<display>
+
+	<group>
+		<_short>Stereoscopic</_short>	
+	  
+            <option name="output_mode" type="int">
+		<_short>Output Mode</_short>
+		<min>0</min>
+		<max>3</max>
+		<default>1</default>
+		<desc>
+		    <value>0</value>
+		    <_name>Stereo effect off</_name>
+		</desc>
+		<desc>
+		    <value>1</value>
+		    <_name>Optimized anaglyph</_name>
+		</desc>
+		<desc>
+		    <value>2</value>
+		    <_name>Row interlaced</_name>
+		</desc>
+
+		<desc>
+		    <value>3</value>
+		    <_name>Column interlaced</_name>
+		</desc>
+	    </option>
+
+
+            <option name="invert" type="bool">
+		<_short>Invert stereo</_short>
+                <_long>Switches left and right eye</_long>
+           	 <default>false</default>
+            </option>
+
+            <option name="strength" type="float">
+                <_short>Strength</_short>
+                <_long>Strength of stereo effect (maximum disparity in px)</_long>
+                <default>105</default>
+                <min>0</min>
+                <max>300</max>
+                <precision>1</precision>
+            </option>
+
+
+            <option name="fov" type="float">
+                <_short>Fov</_short>
+                <_long>Fov</_long>
+                <default>60.0</default>
+                <min>10.0</min>
+                <max>120.0</max>
+                <precision>1.0</precision>
+            </option>
+
+            <option name="depth" type="float">
+                <_short>Background depth</_short>
+                <_long>Background depth</_long>
+                <default>0.3f</default>
+                <min>0.0</min>
+                <max>4.0</max>
+                <precision>0.01</precision>
+            </option>
+
+
+    </group>
+
+    <group>
+	<_short>Appearance</_short>
+	
+            <option name="lighting_strength" type="float">
+                <_short>Lighting</_short>
+                <_long>Simple lighting</_long>
+                <default>0.5f</default>
+                <min>0.0</min>
+                <max>1.0</max>
+                <precision>0.01</precision>
+            </option>
+
+	    <option name="edges_strength" type="float">
+                <_short>Edges</_short>
+                <_long>Scene edges</_long>
+                <default>0.5f</default>
+                <min>0.0</min>
+                <max>1.0</max>
+                <precision>0.01</precision>
+            </option>
+
+    </group>
+
+
+    <group>
+	<_short>Other</_short>
+                
+		<option type="key" name="toggle">
+		    <_short>Toggle off/on</_short>
+		    <_long>Toggle off/on</_long>
+		    <default>&lt;Super&gt;d</default>
+		</option>
+
+		<option type="button" name="move_foreground_in_button">
+		    <_short>Move foreground "In"</_short>
+		    <_long>Move foreground "In"</_long>
+		    <default>&lt;Super&gt;Button4</default>
+		</option>
+
+		
+		<option type="button" name="move_foreground_out_button">
+		    <_short>Move foreground "Out"</_short>
+		    <_long>Move foreground "Out"</_long>
+		    <default>&lt;Super&gt;Button5</default>
+		</option>
+		
+		
+		<option type="key" name="reset_foreground_depth_button">
+		    <_short>Reset foreground depth</_short>
+		    <_long>Reset foreground depth</_long>
+		    <default>&lt;Super&gt;0</default>
+		</option>
+                
+                
+            <option name="drawMouse" type="bool">
+		<_short>Draw 3D Mouse</_short>
+                <_long>Draws mouse in 3D space, using mousepoll plugin to obtain mouse position</_long>
+           	 <default>true</default>
+            </option>
+
+	
+	
+            <option name="window_match" type="match">
+					<_short>Floating Window Match</_short>
+					<_long>Windows that should be handled by 3D</_long>
+					<default>Toolbar | Utility | Dialog | Normal | Unknown</default>
+            </option>
+
+            <option name="desktop_match" type="match">
+					<_short>Background Match</_short>
+					<_long>Which windows should be used as background</_long>
+					<default>Desktop</default>
+            </option>
+
+            <option name="dock_match" type="match">
+					<_short>Dock Match</_short>
+					<_long>Windows that would be placed at zero-depth</_long>
+					<default>Dock</default>
+            </option>
+
+    </group>
+
+
+
+	   </display>
+    </plugin>
+</compiz>
