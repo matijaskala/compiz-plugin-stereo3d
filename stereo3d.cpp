@@ -177,7 +177,7 @@ stereo3dPaintOutput (CompScreen              *s,
 
     STEREO3D_SCREEN (s);
 
-    mTransform = (CompTransform*)memcpy (malloc (sizeof (CompMatrix)), origTransform, sizeof (CompMatrix));
+    mTransform = (CompTransform*)memcpy (malloc (sizeof (CompTransform)), origTransform, sizeof (CompTransform));
 
     if(sos->enabled)
     {
@@ -207,7 +207,7 @@ stereo3dPaintTransformedOutput (CompScreen              *s,
 
     STEREO3D_SCREEN (s);
 
-    mTransform = (CompTransform*)memcpy (malloc (sizeof (CompMatrix)), origTransform, sizeof (CompMatrix));
+    mTransform = (CompTransform*)memcpy (malloc (sizeof (CompTransform)), origTransform, sizeof (CompTransform));
 
     if(sos->enabled)
     {
