@@ -41,7 +41,6 @@ typedef struct _Stereo3DWindow Stereo3DWindow;
 typedef struct _Stereo3DDisplay
 {
     int screenPrivateIndex;
-    int windowPrivateIndex;
 
     MousePollFunc *mpFunc;
 } Stereo3DDisplay;
@@ -139,6 +138,7 @@ private:
 
 typedef struct _Stereo3DScreen
 {
+    int windowPrivateIndex;
     CompScreen *s;
 
     CursorTexture       cursorTex;
@@ -176,13 +176,6 @@ typedef struct _Stereo3DScreen
 
     StereoscopicFilterBase * currFilter;
 
-
-    bool
-    glPaintOutput (const ScreenPaintAttrib &sAttrib,
-                              const CompMatrix            &transform,
-			          const Region          &region,
-			          CompOutput                *output,
-			          unsigned int              mask);
 
     PaintWindowProc paintWindow;
     PaintTransformedOutputProc paintTransformedOutput;
@@ -253,11 +246,6 @@ typedef struct _Stereo3DScreen
         PaintOutputProc paintOutput;
         DrawWindowProc drawWindow;
         DrawWindowTextureProc drawWindowTexture;
-
-        void glDrawGeometry();
-
-        void
-        drawBackgroundWireframe(float, float);
 } Stereo3DScreen;
 
 struct _Stereo3DWindow
@@ -273,9 +261,10 @@ struct _Stereo3DWindow
         float brightness;
 
 
-        FloatingTypeEnum getFloatingType();
         FloatingTypeEnum floatingType;
 };
+
+        FloatingTypeEnum getFloatingType(CompWindow *window);
 
 #define GET_STEREO3D_DISPLAY(d)                            \
     ((Stereo3DDisplay *) (d)->base.privates[displayPrivateIndex].ptr)
@@ -283,8 +272,8 @@ struct _Stereo3DWindow
 #define GET_STEREO3D_SCREEN(s, sod)                         \
     ((Stereo3DScreen *) (s)->base.privates[(sod)->screenPrivateIndex].ptr)
 
-#define GET_STEREO3D_WINDOW(w, sod)                         \
-    ((Stereo3DWindow *) (w)->base.privates[(sod)->windowPrivateIndex].ptr)
+#define GET_STEREO3D_WINDOW(w, sos)                         \
+    ((Stereo3DWindow *) (w)->base.privates[(sos)->windowPrivateIndex].ptr)
 
 #define STEREO3D_DISPLAY(d)						       \
     Stereo3DDisplay *sod = GET_STEREO3D_DISPLAY (d)
@@ -293,6 +282,6 @@ struct _Stereo3DWindow
     Stereo3DScreen *sos = GET_STEREO3D_SCREEN (s, GET_STEREO3D_DISPLAY (s->display))
 
 #define STEREO3D_WINDOW(w)							\
-    Stereo3DWindow *sow = GET_STEREO3D_WINDOW (w, GET_STEREO3D_DISPLAY (w->screen->display))
+    Stereo3DWindow *sow = GET_STEREO3D_WINDOW (w, GET_STEREO3D_SCREEN (w->screen, GET_STEREO3D_DISPLAY (w->screen->display)))
 
 #endif

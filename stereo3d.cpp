@@ -311,12 +311,14 @@ drawCursor (Stereo3DScreen *sos)
 /* Create (if necessary) a texture to store the cursor,
  * fetch the cursor with XFixes. Store it.  */
 static void
-updateCursor (Stereo3DScreen *sos)
+updateCursor (CompScreen *s)
 {
 //    compLogMessage ("stereo3d", CompLogLevelWarn, "updateCursor!");
     unsigned char *pixels;
     int           i;
-    Display       *dpy = sos->s->display->display;
+    Display       *dpy = s->display->display;
+
+    STEREO3D_SCREEN (s);
 
     if (!sos->cursorTex.isSet)
     {
@@ -833,7 +835,7 @@ updateMouseInterval (CompScreen *s, int x, int y)
 
 
 FloatingTypeEnum
-Stereo3DWindow::getFloatingType ()
+getFloatingType (CompWindow *window)
 {
     if (window->attrib.override_redirect)
 	return FTNONE;
@@ -868,11 +870,15 @@ stereo3dInitScreen (CompPlugin *p,
     STEREO3D_DISPLAY (s->display);
 
     sos = (Stereo3DScreen*)calloc (1, sizeof(Stereo3DScreen));
-    //sos = new Stereo3DScreen;
     if (!sos)
         return FALSE;
 
-    s->base.privates[sod->screenPrivateIndex].ptr = sos;
+    sos->windowPrivateIndex = allocateWindowPrivateIndex (s);
+    if (sos->windowPrivateIndex < 0)
+    {
+        free (sos);
+        return FALSE;
+    }
 
     sos->s = s;
     sos->enabled=(true);
@@ -905,6 +911,15 @@ stereo3dInitScreen (CompPlugin *p,
     if(sos->mouseDrawingEnabled)
         enableMouseDrawing(s);
 
+    WRAP (sos, s, preparePaintScreen, stereo3dPreparePaintScreen);
+    WRAP (sos, s, paintOutput, stereo3dPaintOutput);
+    WRAP (sos, s, paintTransformedOutput, stereo3dPaintTransformedOutput);
+    WRAP (sos, s, donePaintScreen, stereo3dDonePaintScreen);
+    WRAP (sos, s, drawWindow, stereo3dDrawWindow);
+    WRAP (sos, s, drawWindowTexture, stereo3dDrawWindowTexture);
+
+    s->base.privates[sod->screenPrivateIndex].ptr = sos;
+
     return TRUE;
 }
 
@@ -916,7 +931,7 @@ enableMouseDrawing(CompScreen *s)
     STEREO3D_DISPLAY(s->display);
     STEREO3D_SCREEN(s);
 
-    updateCursor(sos);
+    updateCursor(s);
 
     //hides original cursor
     XFixesHideCursor (s->display->display, s->root);
@@ -944,6 +959,8 @@ stereo3dFiniScreen (CompPlugin *p,
 {
     STEREO3D_SCREEN (s);
 
+    freeWindowPrivateIndex (s, sos->windowPrivateIndex);
+
     sos -> anaglyphFilter.deinit(s);
     sos -> interlacedFilter.deinit(s);
 
@@ -952,18 +969,32 @@ stereo3dFiniScreen (CompPlugin *p,
 
     glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
     glDisable (GL_STENCIL_TEST);
+
+    UNWRAP (sos, s, preparePaintScreen);
+    UNWRAP (sos, s, paintOutput);
+    UNWRAP (sos, s, paintTransformedOutput);
+    UNWRAP (sos, s, donePaintScreen);
+    UNWRAP (sos, s, drawWindow);
+    UNWRAP (sos, s, drawWindowTexture);
+
+    free(sos);
 }
 
-static void
-stereo3dInitWindow (CompWindow *window)
+static Bool
+stereo3dInitWindow (CompPlugin *p, CompWindow *w)
 {
-    STEREO3D_WINDOW(window);
+    Stereo3DWindow *sow;
+    STEREO3D_SCREEN(w->screen);
 
-    sow->window = window;
+    sow = (Stereo3DWindow*)calloc (1, sizeof (Stereo3DWindow));
+    if (!sow)
+        return FALSE;
+
+    sow->window = w;
     sow->drawMouse = false;
     sow->floatingType = FTNONE;
 
-    sow->floatingType = sow->getFloatingType();
+    sow->floatingType = getFloatingType(w);
 
     sow->currAttrs.rotation.x=0.0f;
     sow->currAttrs.rotation.y=0.0f;
@@ -984,6 +1015,17 @@ stereo3dInitWindow (CompWindow *window)
     sow->dstAttrs.translation.z=0.0f;
 
     sow->dstAttrs.scale=1.0f;
+
+    w->base.privates[sos->windowPrivateIndex].ptr = sow;
+
+    return TRUE;
+}
+
+static void
+stereo3dFiniWindow (CompPlugin *p, CompWindow *w)
+{
+    STEREO3D_WINDOW(w);
+    free(sow);
 }
 
 static Bool
@@ -1048,7 +1090,8 @@ stereo3dInitObject (CompPlugin *p,
     static InitPluginObjectProc dispTab[] = {
 	(InitPluginObjectProc) 0,
 	(InitPluginObjectProc) stereo3dInitDisplay,
-	(InitPluginObjectProc) stereo3dInitScreen
+	(InitPluginObjectProc) stereo3dInitScreen,
+	(InitPluginObjectProc) stereo3dInitWindow
     };
 
     RETURN_DISPATCH (o, dispTab, ARRAY_SIZE (dispTab), TRUE, (p, o));
@@ -1061,7 +1104,8 @@ stereo3dFiniObject (CompPlugin *p,
     static FiniPluginObjectProc dispTab[] = {
 	(FiniPluginObjectProc) 0,
 	(FiniPluginObjectProc) stereo3dFiniDisplay,
-	(FiniPluginObjectProc) stereo3dFiniScreen
+	(FiniPluginObjectProc) stereo3dFiniScreen,
+	(FiniPluginObjectProc) stereo3dFiniWindow
     };
 
     DISPATCH (o, dispTab, ARRAY_SIZE (dispTab), (p, o));

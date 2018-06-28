@@ -27,7 +27,7 @@ void _AnimationManager::updateWindowsPosition(CompWindow* windows, float depth, 
     for (CompWindow *w = windows; w; w = w->next)
     {
         STEREO3D_WINDOW (w);
-        sow->floatingType = sow->getFloatingType();
+        sow->floatingType = getFloatingType(w);
 
         if(sow->floatingType == FTWINDOW)
             floatingWindowsCount ++;
