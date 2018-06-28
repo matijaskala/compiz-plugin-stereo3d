@@ -20,7 +20,7 @@ int displayPrivateIndex = 0;
 static void
 enableMouseDrawing(CompScreen *s);
 static void
-disableMouseDrawing(Stereo3DScreen *sos);
+disableMouseDrawing(CompScreen *s);
 
 static void
 frustum (GLfloat *m,
@@ -93,7 +93,7 @@ stereo3dPreparePaintScreen (CompScreen *s,
         if(sos->mouseDrawingEnabled)
         {
             sos->mouseDrawingEnabled = false;
-            disableMouseDrawing(sos);
+            disableMouseDrawing(s);
         } 
     }
 
@@ -265,8 +265,10 @@ freeCursor (Stereo3DScreen *sos, CursorTexture * cursor)
 }
 
 static void
-drawCursor (Stereo3DScreen *sos)
+drawCursor (CompScreen *s)
 {
+    STEREO3D_SCREEN (s);
+
     if (sos->cursorTex.isSet && sos->mouseDrawingEnabled)
     {
 	CompTransform      sTransform;// = transform;
@@ -275,7 +277,7 @@ drawCursor (Stereo3DScreen *sos)
 
         matrixTranslate (&sTransform, 0.0f, 0.0f, getCurrentForegroundZ (&sos->animationMgr));
 
-	transformToScreenSpace (sos->s, &sos->s->outputDev[sos->s->currentOutputDev], -DEFAULT_Z_CAMERA, &sTransform);
+	transformToScreenSpace (s, &s->outputDev[s->currentOutputDev], -DEFAULT_Z_CAMERA, &sTransform);
 
         glPushMatrix ();
         glLoadMatrixf (sTransform.m);
@@ -325,7 +327,7 @@ updateCursor (CompScreen *s)
     if (!sos->cursorTex.isSet)
     {
 	sos->cursorTex.isSet = true;
-	sos->cursorTex.screen = sos->s;
+	sos->cursorTex.screen = s;
 	glEnable (GL_TEXTURE_RECTANGLE_ARB);
 	glGenTextures (1, &sos->cursorTex.texture);
 	glBindTexture (GL_TEXTURE_RECTANGLE_ARB, sos->cursorTex.texture);
@@ -455,16 +457,16 @@ static void
 initProjectionMatrixChange();
 
 static void
-setLeftEyeProjectionMatrix (Stereo3DScreen *sos);
+setLeftEyeProjectionMatrix (CompScreen *s);
 
 static void
-setRightEyeProjectionMatrix (Stereo3DScreen *sos);
+setRightEyeProjectionMatrix (CompScreen *s);
 
 static void
-setNoConvergenceProjectionMatrix (Stereo3DScreen *sos);
+setNoConvergenceProjectionMatrix (CompScreen *s);
 
 static void
-cleanupProjectionMatrixOperations (Stereo3DScreen *sos);
+cleanupProjectionMatrixOperations (CompScreen *s);
 
 static Bool
 stereo3dDrawWindow (CompWindow           *w,
@@ -489,39 +491,39 @@ stereo3dDrawWindow (CompWindow           *w,
         if (sos->stereoType != 0)
         {
             // ********* left eye *********
-            setLeftEyeProjectionMatrix (sos);
+            setLeftEyeProjectionMatrix (w->screen);
             UNWRAP (sos, w->screen, drawWindow);
             status &= (*w->screen->drawWindow) (w, transform, fragment, region, mask);
             WRAP (sos, w->screen, drawWindow, stereo3dDrawWindow);
             if(sow->drawMouse)
             {
-                drawCursor(sos);
+                drawCursor(w->screen);
             }
 
             // ********* right eye *********
-            setRightEyeProjectionMatrix (sos);
+            setRightEyeProjectionMatrix (w->screen);
             UNWRAP (sos, w->screen, drawWindow);
             status &= (*w->screen->drawWindow) (w, transform, fragment, region, mask);
             WRAP (sos, w->screen, drawWindow, stereo3dDrawWindow);
             if(sow->drawMouse)
             {
-                drawCursor(sos);
+                drawCursor(w->screen);
             }
         }
         else // 2.5D
         {
-            setNoConvergenceProjectionMatrix(sos);
+            setNoConvergenceProjectionMatrix(w->screen);
             UNWRAP (sos, w->screen, drawWindow);
             status &= (*w->screen->drawWindow) (w, transform, fragment, region, mask);
             WRAP (sos, w->screen, drawWindow, stereo3dDrawWindow);
             if(sow->drawMouse)
             {
-                drawCursor(sos);
+                drawCursor(w->screen);
             }
         }
 
         // ********* cleanup *********
-        cleanupProjectionMatrixOperations(sos);
+        cleanupProjectionMatrixOperations(w->screen);
     }
     else
     {
@@ -664,8 +666,10 @@ getWorldZCorrection(float fov)
 }
 
 static void
-setLeftEyeProjectionMatrix (Stereo3DScreen *sos)
+setLeftEyeProjectionMatrix (CompScreen *s)
 {
+    STEREO3D_SCREEN (s);
+
     sos->renderingState = EyeLeft;
 
     glMatrixMode (GL_PROJECTION);
@@ -673,15 +677,17 @@ setLeftEyeProjectionMatrix (Stereo3DScreen *sos)
 
     glMultMatrixf (sos->projectionL);
 
-    glTranslatef( -(sos->parallax), 0.0f, getWorldZCorrection( stereo3dGetFov(sos->s->display) ) );
+    glTranslatef( -(sos->parallax), 0.0f, getWorldZCorrection( stereo3dGetFov(s->display) ) );
 
     glMatrixMode (GL_MODELVIEW);
 }
 
 
 static void
-setRightEyeProjectionMatrix (Stereo3DScreen *sos)
+setRightEyeProjectionMatrix (CompScreen *s)
 {
+    STEREO3D_SCREEN (s);
+
     sos->renderingState = EyeRight;
 
     glMatrixMode (GL_PROJECTION);
@@ -689,15 +695,17 @@ setRightEyeProjectionMatrix (Stereo3DScreen *sos)
 
     glMultMatrixf (sos->projectionR);
 
-    glTranslatef(sos->parallax, 0.0f, getWorldZCorrection( stereo3dGetFov(sos->s->display) ) );
+    glTranslatef(sos->parallax, 0.0f, getWorldZCorrection( stereo3dGetFov(s->display) ) );
 
     glMatrixMode (GL_MODELVIEW);
 }
 
 
 static void
-setNoConvergenceProjectionMatrix (Stereo3DScreen *sos)
+setNoConvergenceProjectionMatrix (CompScreen *s)
 {
+    STEREO3D_SCREEN (s);
+
     sos->renderingState = EyeSingle;
 
     glMatrixMode (GL_PROJECTION);
@@ -705,22 +713,21 @@ setNoConvergenceProjectionMatrix (Stereo3DScreen *sos)
 
     glMultMatrixf (sos->projectionM);
 
-    glTranslatef( 0.0f, 0.0f, getWorldZCorrection( stereo3dGetFov(sos->s->display) ) );
+    glTranslatef( 0.0f, 0.0f, getWorldZCorrection( stereo3dGetFov(s->display) ) );
 
     glMatrixMode (GL_MODELVIEW);
 }
 
 static void
-cleanupProjectionMatrixOperations (Stereo3DScreen *sos)
+cleanupProjectionMatrixOperations (CompScreen *s)
 {
+    STEREO3D_SCREEN (s);
+
     sos->renderingState = Cleanup;
     glMatrixMode (GL_PROJECTION);
     glPopMatrix();
     glMatrixMode (GL_MODELVIEW);
 }
-
-static void
-enableMouseDrawing(CompScreen *s);
 
 /********************************************************************
 *******************       Handle Inputs       ***********************
@@ -810,16 +817,16 @@ toggleOn (CompDisplay     *d,
 
 	if(!sos->mouseDrawingEnabled)
 	    return true;
-    
+
 	if(sos->enabled)
 	{
 	    if(sos->mouseDrawingEnabled)
-		enableMouseDrawing(sos->s);
+		enableMouseDrawing(s);
 	}
 	else
 	{
 	    if(sos->mouseDrawingEnabled)
-		disableMouseDrawing(sos);
+		disableMouseDrawing(s);
 	}
     }
     
@@ -882,7 +889,6 @@ stereo3dInitScreen (CompPlugin *p,
         return FALSE;
     }
 
-    sos->s = s;
     sos->enabled=(true);
     sos->animPeriod=(1000.0f);
     sos->progress=(0.0f);
@@ -950,12 +956,13 @@ enableMouseDrawing(CompScreen *s)
 }
 
 static void
-disableMouseDrawing(Stereo3DScreen *sos)
+disableMouseDrawing(CompScreen *s)
 {
-    STEREO3D_DISPLAY(sos->s->display);
+    STEREO3D_DISPLAY(s->display);
+    STEREO3D_SCREEN(s);
 
-    sod->mpFunc->removePositionPolling (sos->s, sos->pollHandle);
-    XFixesShowCursor (sos->s->display->display, sos->s->root);
+    sod->mpFunc->removePositionPolling (s, sos->pollHandle);
+    XFixesShowCursor (s->display->display, s->root);
     freeCursor (sos, &sos->cursorTex);
 }
 
@@ -971,7 +978,7 @@ stereo3dFiniScreen (CompPlugin *p,
     sos -> interlacedFilter->deinit(s);
 
     if(sos->mouseDrawingEnabled)
-        disableMouseDrawing(sos);
+        disableMouseDrawing(s);
 
     glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
     glDisable (GL_STENCIL_TEST);
@@ -996,7 +1003,6 @@ stereo3dInitWindow (CompPlugin *p, CompWindow *w)
     if (!sow)
         return FALSE;
 
-    sow->window = w;
     sow->drawMouse = false;
     sow->floatingType = FTNONE;
 

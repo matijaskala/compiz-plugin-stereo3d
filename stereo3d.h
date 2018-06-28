@@ -137,7 +137,6 @@ private:
 typedef struct _Stereo3DScreen
 {
     int windowPrivateIndex;
-    CompScreen *s;
 
     CursorTexture       cursorTex;
     PositionPollingHandle	pollHandle;
@@ -248,8 +247,6 @@ typedef struct _Stereo3DScreen
 
 struct _Stereo3DWindow
 {
-        CompWindow *window;
-
         WndAnimationAttrs currAttrs;
         WndAnimationAttrs dstAttrs;
 
@@ -257,7 +254,6 @@ struct _Stereo3DWindow
         float opacity;
         float saturation;
         float brightness;
-
 
         FloatingTypeEnum floatingType;
 };
