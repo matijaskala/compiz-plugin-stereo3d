@@ -15,6 +15,8 @@
 
 #define PI 3.1415926f
 
+int displayPrivateIndex = 0;
+
 static void
 enableMouseDrawing(CompScreen *s);
 static void
@@ -100,21 +102,21 @@ stereo3dPreparePaintScreen (CompScreen *s,
     {
         case 0:
             //2.5D, do nothing...
-            sos->currFilter = &sos->anaglyphFilter;
+            sos->currFilter = sos->anaglyphFilter;
             break;
 
         case 1:
-            sos->currFilter = &sos->anaglyphFilter;
+            sos->currFilter = sos->anaglyphFilter;
             break;
 
         case 2:
-            sos->interlacedFilter.column = false;
-            sos->currFilter = &sos->interlacedFilter;
+            sos->interlacedFilter->column = false;
+            sos->currFilter = sos->interlacedFilter;
             break;
 
         case 3:
-            sos->interlacedFilter.column = true;
-            sos->currFilter = &sos->interlacedFilter;
+            sos->interlacedFilter->column = true;
+            sos->currFilter = sos->interlacedFilter;
             break;
     }
 
@@ -159,7 +161,7 @@ stereo3dPreparePaintScreen (CompScreen *s,
     sos->lightingStrength = stereo3dGetLightingStrength(s->display);
     sos->edgesStrength = stereo3dGetEdgesStrength(s->display);
 
-    sos->animationMgr.updateWindowsPosition(s->windows, depth, sos->lightingStrength);
+    updateWindowsPosition (&sos->animationMgr, s, depth, sos->lightingStrength);
 }
 
 static Bool
@@ -271,15 +273,15 @@ drawCursor (Stereo3DScreen *sos)
 	int           x, y;
 
 
-        matrixTranslate (&sTransform, 0.0f, 0.0f, sos->animationMgr.getCurrentForegroundZ ());
+        matrixTranslate (&sTransform, 0.0f, 0.0f, getCurrentForegroundZ (&sos->animationMgr));
 
 	transformToScreenSpace (sos->s, &sos->s->outputDev[sos->s->currentOutputDev], -DEFAULT_Z_CAMERA, &sTransform);
 
         glPushMatrix ();
-	glLoadMatrixf (sTransform.m);
-	glTranslatef ( sos->animationMgr.getCurrentMouseX (),
-                   sos->animationMgr.getCurrentMouseY (),
-                   0.0f);
+        glLoadMatrixf (sTransform.m);
+        glTranslatef ( getCurrentMouseX (&sos->animationMgr),
+                       getCurrentMouseY (&sos->animationMgr),
+                       0.0f);
 
         
 	x = -sos->cursorTex.hotX;
@@ -738,7 +740,7 @@ moveForegroundIn(CompDisplay     *display,
 
     if (s) {
         STEREO3D_SCREEN (s);
-        return sos->animationMgr.moveForegroundIn();
+        return moveForegroundIn (&sos->animationMgr);
     }
 
     return TRUE;
@@ -759,7 +761,7 @@ moveForegroundOut(CompDisplay     *display,
 
     if (s) {
         STEREO3D_SCREEN (s);
-        return sos->animationMgr.moveForegroundOut();
+        return moveForegroundOut (&sos->animationMgr);
     }
 
     return TRUE;
@@ -781,7 +783,7 @@ resetForegroundDepth(CompDisplay     *display,
 
     if (s) {
         STEREO3D_SCREEN (s);
-        return sos->animationMgr.resetForegroundDepth();
+        return resetForegroundDepth (&sos->animationMgr);
     }
 
     return TRUE;
@@ -829,8 +831,8 @@ updateMouseInterval (CompScreen *s, int x, int y)
 {
     STEREO3D_SCREEN(s);
 
-    sos->animationMgr.setDestMouseX (x);
-    sos->animationMgr.setDestMouseY (y);
+    setDestMouseX (&sos->animationMgr, x);
+    setDestMouseY (&sos->animationMgr, y);
 }
 
 
@@ -899,17 +901,18 @@ stereo3dInitScreen (CompPlugin *p,
     stereo3dSetToggleInitiate (s->display, toggleOn);
 
 
-    sos->anaglyphFilter.init();
-    sos->interlacedFilter.init();
+    sos->anaglyphFilter = new AnaglyphFilter;
+    sos->interlacedFilter = new InterlacedFilter;
+
+    sos->anaglyphFilter->init();
+    sos->interlacedFilter->init();
 
 
-    sos->currFilter = &sos->anaglyphFilter;
+    sos->currFilter = sos->anaglyphFilter;
 
 
     /* draw cursor to texture */
     sos->mouseDrawingEnabled = stereo3dGetDrawmouse(s->display);
-    if(sos->mouseDrawingEnabled)
-        enableMouseDrawing(s);
 
     WRAP (sos, s, preparePaintScreen, stereo3dPreparePaintScreen);
     WRAP (sos, s, paintOutput, stereo3dPaintOutput);
@@ -919,6 +922,9 @@ stereo3dInitScreen (CompPlugin *p,
     WRAP (sos, s, drawWindowTexture, stereo3dDrawWindowTexture);
 
     s->base.privates[sod->screenPrivateIndex].ptr = sos;
+
+    if(sos->mouseDrawingEnabled)
+        enableMouseDrawing(s);
 
     return TRUE;
 }
@@ -939,8 +945,8 @@ enableMouseDrawing(CompScreen *s)
     sos->pollHandle = sod->mpFunc->addPositionPolling (s, updateMouseInterval);
     //lastChange = time(NULL);
     sod->mpFunc->getCurrentPosition (s, &x, &y);
-    sos->animationMgr.setDestMouseX((float) x);
-    sos->animationMgr.setDestMouseY((float) y);
+    setDestMouseX (&sos->animationMgr, (float) x);
+    setDestMouseY (&sos->animationMgr, (float) y);
 }
 
 static void
@@ -961,8 +967,8 @@ stereo3dFiniScreen (CompPlugin *p,
 
     freeWindowPrivateIndex (s, sos->windowPrivateIndex);
 
-    sos -> anaglyphFilter.deinit(s);
-    sos -> interlacedFilter.deinit(s);
+    sos -> anaglyphFilter->deinit(s);
+    sos -> interlacedFilter->deinit(s);
 
     if(sos->mouseDrawingEnabled)
         disableMouseDrawing(sos);
@@ -1025,6 +1031,7 @@ static void
 stereo3dFiniWindow (CompPlugin *p, CompWindow *w)
 {
     STEREO3D_WINDOW(w);
+
     free(sow);
 }
 

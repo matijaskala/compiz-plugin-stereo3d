@@ -34,7 +34,7 @@
 #include <GL/glu.h>
 #include <GL/gl.h>
 
-static int displayPrivateIndex = 0;
+extern int displayPrivateIndex;
 
 typedef struct _Stereo3DWindow Stereo3DWindow;
 
@@ -57,30 +57,28 @@ typedef struct _WndAnimationAttrs
 
 typedef struct _AnimationManager
 {
-public:
-
-    void updateWindowsPosition(CompWindow* windows, float, float);
-    bool moveForegroundIn();
-    bool moveForegroundOut();
-    bool resetForegroundDepth();
-
-    float getCurrentForegroundZ();
-
-    float getCurrentMouseX();
-    float getCurrentMouseY();
-    void setDestMouseX(float value);
-    void setDestMouseY(float value);
-
-private:
     Point           mouseCurr;
     Point           mouseDst;
     float               foregroundCurrZ;
     float               foregroundDstZ;
     float               backgroundDepth;
     
-    static void updateWindow(Stereo3DWindow * sow);
-    void updateMousePosition();
 } AnimationManager;
+
+    void updateWindowsPosition(AnimationManager *animationMgr, CompScreen* s, float, float);
+    Bool moveForegroundIn(AnimationManager *animationMgr);
+    Bool moveForegroundOut(AnimationManager *animationMgr);
+    Bool resetForegroundDepth(AnimationManager *animationMgr);
+
+    float getCurrentForegroundZ(AnimationManager *animationMgr);
+
+    float getCurrentMouseX(AnimationManager *animationMgr);
+    float getCurrentMouseY(AnimationManager *animationMgr);
+    void setDestMouseX(AnimationManager *animationMgr, float value);
+    void setDestMouseY(AnimationManager *animationMgr, float value);
+//
+    void updateWindow(Stereo3DWindow * sow);
+    void updateMousePosition(AnimationManager *animationMgr);
 
 typedef struct _StereoscopicFilterBase
 {
@@ -171,8 +169,8 @@ typedef struct _Stereo3DScreen
     DrawingType renderingState;
 
 
-    AnaglyphFilter anaglyphFilter;
-    InterlacedFilter interlacedFilter;
+    AnaglyphFilter* anaglyphFilter;
+    InterlacedFilter* interlacedFilter;
 
     StereoscopicFilterBase * currFilter;
 

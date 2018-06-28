@@ -13,18 +13,18 @@
 
 #include "stereo3d.h"
 
-void _AnimationManager::updateWindowsPosition(CompWindow* windows, float depth, float lightingStrength)
+void updateWindowsPosition(AnimationManager *animationMgr, CompScreen* s, float depth, float lightingStrength)
 {
     int floatingWindowsCount = 0;
 
-    backgroundDepth = depth;
+    animationMgr->backgroundDepth = depth;
 
-    updateMousePosition();
+    updateMousePosition(animationMgr);
     Stereo3DWindow *lastDrawnWindow = NULL;
     Stereo3DWindow *bkgWindow = NULL;
 
 
-    for (CompWindow *w = windows; w; w = w->next)
+    for (CompWindow *w = s->windows; w; w = w->next)
     {
         STEREO3D_WINDOW (w);
         sow->floatingType = getFloatingType(w);
@@ -36,10 +36,10 @@ void _AnimationManager::updateWindowsPosition(CompWindow* windows, float depth, 
 
     //compLogMessage ("stereo3d", CompLogLevelWarn, "WndCount: %d", windowsCount);
 
-    float step = (depth + foregroundCurrZ) / (float)floatingWindowsCount;
+    float step = (depth + animationMgr->foregroundCurrZ) / (float)floatingWindowsCount;
 
     int i = 0;
-    for (CompWindow *w = windows; w; w = w->next)
+    for (CompWindow *w = s->windows; w; w = w->next)
     {
         STEREO3D_WINDOW (w);
         
@@ -106,7 +106,7 @@ void _AnimationManager::updateWindowsPosition(CompWindow* windows, float depth, 
 
 }
 
-void _AnimationManager::updateWindow(Stereo3DWindow * sow)
+void updateWindow(Stereo3DWindow * sow)
 {
     sow ->currAttrs.rotation.x += ( sow->dstAttrs.rotation.x - sow->currAttrs.rotation.x ) / 2.0f;
     sow ->currAttrs.rotation.y += ( sow->dstAttrs.rotation.y - sow->currAttrs.rotation.y ) / 2.0f;
@@ -119,68 +119,64 @@ void _AnimationManager::updateWindow(Stereo3DWindow * sow)
     sow ->currAttrs.scale += ( sow->dstAttrs.scale - sow->currAttrs.scale ) / 2.0f;
 }
 
-void _AnimationManager::updateMousePosition() 
+void updateMousePosition(AnimationManager *animationMgr)
 {
-    mouseCurr.x += (mouseDst.x - mouseCurr.x)/2.0f;
-    mouseCurr.y += (mouseDst.y - mouseCurr.y)/2.0f;
-    foregroundCurrZ = foregroundCurrZ + (foregroundDstZ - foregroundCurrZ)/1.5f;
+    animationMgr->mouseCurr.x += (animationMgr->mouseDst.x - animationMgr->mouseCurr.x)/2.0f;
+    animationMgr->mouseCurr.y += (animationMgr->mouseDst.y - animationMgr->mouseCurr.y)/2.0f;
+    animationMgr->foregroundCurrZ = animationMgr->foregroundCurrZ + (animationMgr->foregroundDstZ - animationMgr->foregroundCurrZ)/1.5f;
 }
 
-bool
-_AnimationManager::moveForegroundIn()
+Bool
+moveForegroundIn(AnimationManager *animationMgr)
 {
-
-    if(foregroundDstZ - 0.02f  > -backgroundDepth )
-        foregroundDstZ -= 0.02f;
+    if(animationMgr->foregroundDstZ - 0.02f  > -animationMgr->backgroundDepth )
+        animationMgr->foregroundDstZ -= 0.02f;
                 
     return true;
 }
 
-bool
-_AnimationManager::moveForegroundOut()
-{    
+Bool
+moveForegroundOut(AnimationManager *animationMgr)
+{
     float foregroundLimit = 0.18f;
 
-    if(foregroundDstZ + 0.02f  < foregroundLimit )
-        foregroundDstZ += 0.02f;
+    if(animationMgr->foregroundDstZ + 0.02f  < foregroundLimit )
+        animationMgr->foregroundDstZ += 0.02f;
     else
-        foregroundDstZ = foregroundLimit;
-    
+        animationMgr->foregroundDstZ = foregroundLimit;
+
     return true;
 }
 
-bool
-_AnimationManager::resetForegroundDepth()
+Bool
+resetForegroundDepth(AnimationManager *animationMgr)
 {
-    foregroundDstZ = 0.0f;
-    return true;
+    animationMgr->foregroundDstZ = 0.0f;
+    return TRUE;
 }
 
 
-float _AnimationManager::getCurrentForegroundZ()
+float getCurrentForegroundZ(AnimationManager *animationMgr)
 {
-    return foregroundCurrZ;
+    return animationMgr->foregroundCurrZ;
 }
 
-float _AnimationManager::getCurrentMouseX()
+float getCurrentMouseX(AnimationManager *animationMgr)
 {
-    return mouseCurr.x;
+    return animationMgr->mouseCurr.x;
 }
 
-
-float _AnimationManager::getCurrentMouseY()
+float getCurrentMouseY(AnimationManager *animationMgr)
 {
-    return mouseCurr.y;
+    return animationMgr->mouseCurr.y;
 }
 
-
-void _AnimationManager::setDestMouseX(float value)
+void setDestMouseX(AnimationManager *animationMgr, float value)
 {
-    mouseDst.x = value;
+    animationMgr->mouseDst.x = value;
 }
 
-
-void _AnimationManager::setDestMouseY(float value)
+void setDestMouseY(AnimationManager *animationMgr, float value)
 {
-    mouseDst.y = value;
+    animationMgr->mouseDst.y = value;
 }
