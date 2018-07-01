@@ -144,7 +144,7 @@
             <option name="drawMouse" type="bool">
 		<_short>Draw 3D Mouse</_short>
                 <_long>Draws mouse in 3D space, using mousepoll plugin to obtain mouse position</_long>
-           	 <default>true</default>
+           	 <default>false</default>
             </option>
 
 	
